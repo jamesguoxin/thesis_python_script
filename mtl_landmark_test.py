@@ -83,21 +83,22 @@ def drawPoint(im, x, y):
     draw.point((x-1, y), fill = 0)
     draw.point((x-1, y+1), fill = 0)
     draw.point((x, y-1), fill = 0)
-    draw.point((x, y), fill = 1)
+    draw.point((x, y), fill = 255)
     draw.point((x, y+1), fill = 0)
     draw.point((x+1, y-1), fill = 0)
     draw.point((x+1, y), fill = 0)
     draw.point((x+1, y+1), fill = 0)
     return im
     
-def drawLandmark(im, landmark, tile):
+def drawLandmark(im, landmark, tile, index):
+    prefix = int2index(index)
     for i in range(0, 5):
         xindex = 2 * i
         yindex = 2 * i + 1
         x = landmark[xindex] * tile
         y = landmark[yindex] * tile
         im = drawPoint(im, x, y)
-    im.show()
+    im.save("/home/james/Documents/tmp/" + prefix + ".jpg")
 
 def ensure_dir_exists(path):
     if not os.path.exists(path):
@@ -140,41 +141,41 @@ def left_right_range(errorlist):
 
 def main():
     tile = 40;
-    pose_norm = 60
+    #pose_norm = 60
     imdata = np.zeros((1, 1, tile, tile))
     
     imageRoot = r"/home/james/Documents/James/data/test"
     csvPath = r"/home/james/Documents/James/data/multilabellandmark_truth_test_yaw_de.csv"
     imageList = glob.glob(imageRoot + r"/*.jpg")
     numImages = len(imageList)
-    xlabel = range(0, numImages)
+    #xlabel = range(0, numImages)
     
-    MODEL_FILE_MTL = r"/home/james/Documents/Master_Thesis/mtl_landmark_test/deploy_mtl.prototxt"
-    MODEL_FILE_LANDMARK = r"/home/james/Documents/Master_Thesis/mtl_landmark_test/deploy_landmark.prototxt"
-    PRETRAINED_MTL_List = [r"/home/james/Documents/Master_Thesis/mtl_landmark_test/multilabellandmark2000_lr5_re_iter_828000.caffemodel"]
-    PRETRAINED_LANDMARK_List = [r"/home/james/Documents/Master_Thesis/mtl_landmark_test/landmark2000_lr5_train_iter_828000.caffemodel"]
+    MODEL_FILE_MTL = r"/home/james/Documents/James/file_for_test/deploy_mtl.prototxt"
+    #MODEL_FILE_LANDMARK = r"/home/james/Documents/Master_Thesis/mtl_landmark_test/deploy_landmark.prototxt"
+    PRETRAINED_MTL_List = [r"/home/james/Documents/James/result/mtllandmark2000_lr5_b1_es/mtllandmark2000_lr5_b1_es_iter_36931030.caffemodel"]
+    #PRETRAINED_LANDMARK_List = [r"/home/james/Documents/Master_Thesis/mtl_landmark_test/landmark2000_lr5_train_iter_828000.caffemodel"]
     
     for index in range(0, 1):
         net_mtl = caffe.Net(MODEL_FILE_MTL, PRETRAINED_MTL_List[index])
         net_mtl.set_phase_test()
-        net_mtl.set_mode_cpu()
+        net_mtl.set_mode_gpu()
         net_mtl.set_input_scale('data', 0.00390625)
         
-        net_landmark = caffe.Net(MODEL_FILE_LANDMARK, PRETRAINED_LANDMARK_List[index])
-        net_landmark.set_phase_test()
-        net_landmark.set_mode_cpu()
-        net_landmark.set_input_scale('data', 0.00390625)
+        #net_landmark = caffe.Net(MODEL_FILE_LANDMARK, PRETRAINED_LANDMARK_List[index])
+        #net_landmark.set_phase_test()
+        #net_landmark.set_mode_cpu()
+        #net_landmark.set_input_scale('data', 0.00390625)
         
         error_mtl_curve = []
-        error_landmark_curve = []
+        #error_landmark_curve = []
         
         i = 0
         gt_path = r"/home/james/Documents/James/obj/gt"
         ensure_dir_exists(gt_path)
         mtl_path = r"/home/james/Documents/James/obj/mtl2000_lr5_b1"
         ensure_dir_exists(mtl_path)
-        lm_path = r"/home/james/Documents/James/obj/lm2000_lr5_b1"
-        ensure_dir_exists(lm_path)        
+        #lm_path = r"/home/james/Documents/James/obj/lm2000_lr5_b1"
+        #ensure_dir_exists(lm_path)        
         with open(csvPath, 'rb') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter = ',')
             for row in csv_reader:
@@ -185,19 +186,18 @@ def main():
                 imdata[0, 0, :, :] = arr
                 imdata = imdata.astype('float32')
                 prediction_mtl = net_mtl.forward(data = imdata)
-                prediction_landmark = net_landmark.forward(data = imdata)
+                #prediction_landmark = net_landmark.forward(data = imdata)
                 groundTruth = landmarkFromRow(row)
                 predic_mtl = landmarkFromPredic(prediction_mtl['ip2'])
-                predic_landmark = landmarkFromPredic(prediction_landmark['ip2'])
-                #saveObj(groundTruth, gt_path, filename, tile, i)
-                #saveObj(predic_mtl, mtl_path, filename, tile, i)
+                #predic_landmark = landmarkFromPredic(prediction_landmark['ip2'])
+                saveObj(groundTruth, gt_path, filename, tile, i)
+                saveObj(predic_mtl, mtl_path, filename, tile, i)
                 #saveObj(predic_landmark, lm_path, filename, tile, i)
-                i = i + 1
                 
-                #drawLandmark(im, predic_mtl, tile)
+                drawLandmark(im, predic_mtl, tile, i)
                 #drawLandmark(im, predic_landmark, tile)
                 error_mtl = distance(groundTruth, predic_mtl)
-                error_landmark = distance(groundTruth, predic_landmark)
+                #error_landmark = distance(groundTruth, predic_landmark)
                 
                 #five_error_mtl = fivePointDis(groundTruth, predic_mtl)
                 #five_error_landmark = fivePointDis(groundTruth, predic_landmark)
@@ -208,13 +208,14 @@ def main():
                 #print five_error_landmark
                 
                 error_mtl_curve.append(error_mtl)
-                error_landmark_curve.append(error_landmark)
+                #error_landmark_curve.append(error_landmark)
+                i = i + 1
         error_mtl_left_right = left_right_range(error_mtl_curve)
-        error_landmark_left_right = left_right_range(error_landmark_curve)
+        #error_landmark_left_right = left_right_range(error_landmark_curve)
         print error_mtl_left_right
-        print error_landmark_left_right        
-        print reduce(lambda x, y: x + y, error_mtl_curve) / len(error_mtl_curve)
-        print reduce(lambda x, y: x + y, error_landmark_curve) / len(error_landmark_curve)    
+        #print error_landmark_left_right        
+        #print reduce(lambda x, y: x + y, error_mtl_curve) / len(error_mtl_curve)
+        #print reduce(lambda x, y: x + y, error_landmark_curve) / len(error_landmark_curve)    
         #plt.plot(xlabel, error_mtl_curve)
         #plt.plot(xlabel, error_landmark_curve)
 if __name__ == '__main__':

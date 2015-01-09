@@ -58,11 +58,11 @@ def main():
     pygame.init()
 
     # Directories
-    obj_dir = r"/home/james/Documents/Master_Thesis/mtl_landmark_test/obj"
+    obj_dir = r"/home/james/Documents/James/obj"
 
     # Methods
-    method = ['mtl2000_lr5_noes', 'lm2000_lr5']
-    label_method = ['mtl2000_lr5_noes', 'lm2000_lr5']
+    method = ['mtl2000_lr5_b1']
+    label_method = ['mtl2000_lr5_b1']
 
     # Indexes
     indexes = range(0,5)
@@ -134,7 +134,7 @@ def main():
     ax.set_yticks([0, 0.05, 0.1, 0.15, 0.2])
     ax.yaxis.set_label_coords(-0.15, 0.5)
 
-    savefig(r"/home/james/Documents/Master_Thesis/mtl_landmark_test/results_new20150104.jpg")
+    savefig(r"/home/james/Documents/James/result/mtl2000_lr5_b1.jpg")
     show()
 
 if __name__ == '__main__':
